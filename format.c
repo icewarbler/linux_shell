@@ -20,3 +20,7 @@ void print_no_directory(const char *path) {
 void print_invalid_command(const char *command) {
     printf("Invalid command: %s\n", command);
 }
+
+void print_history_line(size_t index, const char *command) {
+    printf("%zu\t%s\n", index, command);
+}

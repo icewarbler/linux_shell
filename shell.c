@@ -1,27 +1,22 @@
 #include "format.h"
 #include "shell.h"
+#include "vector.h"
 #include <unistd.h>
 #include <stdlib.h>
-#include<string.h>
+#include <string.h>
+#include <stddef.h>
 
+static vector * recent_history;
 static const char * directory;
 
-int main(int argc, char *argv[]) {
-    return shell(argc, argv);
-}
 
-/**
-*   Main method -- called when user starts shell 
-*/
 int shell (int argc, char *argv[]) {
+    recent_history = vector_create(&string_copy_constructor, &string_destructor, &string_default_constructor);
+
     while(1){ parse_command(argc, argv); }
     return 0;
 }
 
-/**
- * Helper function called when user presses "enter"
- * Trims whitespace and searches for a valid command
- */
 void parse_command(int argc, char* argv[]) {
     char cwd[1024];
     directory = getcwd(cwd, sizeof(cwd));
@@ -113,11 +108,13 @@ char ** strsplit(const char * str, const char * delim, size_t * num_tokens) {
 
 void find_cmd(int argc_sh, char *argv_sh[], char * line) {
     char * cmd = argv_sh[0];
-    
-    // cd
-    if (!strcmp(argv_sh[0], "cd")) {
+
+    if (!strcmp(argv_sh[0], "cd")) {    // cd
         run_cd(argc_sh, argv_sh);
-    }
+        vector_push_back(recent_history, line);
+    } else if (!strcmp(cmd, "!history")) {  // !history
+        print_history(argc_sh, argv_sh);
+    } 
 }
 
 int run_cd(int argc_sh, char * argv_sh[]) {
@@ -155,6 +152,19 @@ char * args_to_cmd(int argc_sh, char * argv_sh[]) {
         }
     }
     return cmd;
+}
+
+void print_history(int argc_sh, char * argv_sh[]) {
+    if (argc_sh > 1) {  // input is too long
+        char * cmd = args_to_cmd(argc_sh, argv_sh);
+        print_invalid_command(cmd);
+        free(cmd);
+        return;
+    }
+    
+    for (size_t i = 0; i < vector_size(recent_history); i++) {
+        print_history_line(i, (char *) vector_get(recent_history, i));
+    }
 }
 
 void exit_handler() {

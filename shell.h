@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 // Entry point for shell
 int shell(int argc, char * argv[]);
 
@@ -30,3 +32,9 @@ char * args_to_cmd(int argc_sh, char * argv_sh[]);
  * Implementation of strtok
  */
 char** strsplit(const char * string, const char * delim, size_t * num_tokens);
+
+/**
+ * Implementation of '!history'
+ * Print the contents of the recent_history vector
+ */
+void print_history(int argc_sh, char * argv_sh[]);

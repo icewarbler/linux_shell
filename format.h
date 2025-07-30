@@ -46,3 +46,9 @@ void print_no_directory(const char *path);
  * such as `kill` without pid.
  */
 void print_invalid_command(const char *command);
+
+/**
+ * Print a single line of history. Both `index` and `command` are the same as
+ * in the history log.
+ */
+void print_history_line(size_t index, const char *command);
