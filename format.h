@@ -35,3 +35,14 @@ typedef struct process_info {
  * `directory` and current process id `pid`.
  */
 void print_prompt(const char *directory, pid_t pid);
+
+/**
+ * Print when the user tries to change directories but `path` does not exist.
+ */
+void print_no_directory(const char *path);
+
+/**
+ * Print when use of built-in 'command' is invalid,
+ * such as `kill` without pid.
+ */
+void print_invalid_command(const char *command);
