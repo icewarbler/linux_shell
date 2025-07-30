@@ -52,3 +52,8 @@ void print_invalid_command(const char *command);
  * in the history log.
  */
 void print_history_line(size_t index, const char *command);
+
+/**
+ * Print when the user specifies an out-of-bounds history command.
+ */
+void print_invalid_index();

@@ -8,6 +8,7 @@
 
 static vector * recent_history;
 static const char * directory;
+const char * space = " ";
 
 
 int shell (int argc, char *argv[]) {
@@ -45,10 +46,9 @@ void parse_command(int argc, char* argv[]) {
 
     char * user_input = malloc(strlen(line) + 1);
     user_input = strcpy(user_input, line);
-    const char * space = " ";
     char ** argv_sh = strsplit(user_input, space, &argc_int);
     if (argc_sh == 1) { // The command is a single word
-        find_cmd(argc_sh, argv_sh, user_input);
+        find_cmd(argc_sh, argv_sh, line);
         free(user_input);
         for (int i = 0; i < argc_sh; i++) {
             free(argv_sh[i]);
@@ -57,7 +57,7 @@ void parse_command(int argc, char* argv[]) {
         free(argv_sh);
         return;
     }
-    find_cmd(argc_sh, argv_sh, user_input);
+    find_cmd(argc_sh, argv_sh, line);
 
     free(user_input);
     for(int i=0; i < argc_sh; i++) {
@@ -114,7 +114,34 @@ void find_cmd(int argc_sh, char *argv_sh[], char * line) {
         vector_push_back(recent_history, line);
     } else if (!strcmp(cmd, "!history")) {  // !history
         print_history(argc_sh, argv_sh);
-    } 
+    } else if (!strncmp(cmd, "#", 1)) {
+        int input_int;
+        if (sscanf(cmd+1, "%d", &input_int) == 1) {
+            exec_history(argc_sh, argv_sh, input_int);
+        } else { print_invalid_command(line); }
+    }
+}
+
+char * args_to_cmd(int argc_sh, char * argv_sh[]) {
+    int cmd_length = 0;
+    for (int i = 0; i < argc_sh; i++) {
+        cmd_length += strlen(argv_sh[i]);
+    }
+    cmd_length += argc_sh - 1; //spaces
+    cmd_length++;   //null
+
+    char * cmd = malloc(cmd_length);
+    for (int i = 0; i < argc_sh; i++) {
+        if (i == 0) {
+            cmd = strcpy(cmd, argv_sh[i]);
+        } else {
+            cmd = strcat(cmd, argv_sh[i]);
+        }
+        if (i+1 < argc_sh) {
+            cmd = strcat(cmd, " ");
+        }
+    }
+    return cmd;
 }
 
 int run_cd(int argc_sh, char * argv_sh[]) {
@@ -131,29 +158,6 @@ int run_cd(int argc_sh, char * argv_sh[]) {
     return 1;
 }
 
-char * args_to_cmd(int argc_sh, char * argv_sh[]) {
-    int cmd_length = 0;
-    
-    for (int i = 0; i < argc_sh; i++) {
-        cmd_length += strlen(argv_sh[i]);
-    }
-    cmd_length += argc_sh - 1; // spaces
-    cmd_length++; // null
-
-    char * cmd = malloc(cmd_length);
-    for (int i = 0; i < argc_sh; i++) {
-        if (i == 0) {
-            cmd = strcpy(cmd, argv_sh[i]);
-        } else {
-            cmd = strcat(cmd, argv_sh[i]);
-        }
-        if (i+1 < argc_sh) {
-            cmd = strcat(cmd, " ");
-        }
-    }
-    return cmd;
-}
-
 void print_history(int argc_sh, char * argv_sh[]) {
     if (argc_sh > 1) {  // input is too long
         char * cmd = args_to_cmd(argc_sh, argv_sh);
@@ -164,6 +168,36 @@ void print_history(int argc_sh, char * argv_sh[]) {
     
     for (size_t i = 0; i < vector_size(recent_history); i++) {
         print_history_line(i, (char *) vector_get(recent_history, i));
+    }
+}
+
+void exec_history(int argc_sh, char * argv_sh[], int input_int) {
+    size_t history_length = vector_size(recent_history);
+    if (argc_sh > 1) {  // Input is too long
+        char * cmd = args_to_cmd(argc_sh, argv_sh);
+        print_invalid_command(cmd);
+        free(cmd);
+        return;
+    }
+    if (input_int >= 0 && input_int < (int) history_length) {
+        char * line = (char*) vector_get(recent_history, input_int); // Overrides whatever is stored in 'line'
+        
+        // Counts the number of arguments in the command from history
+        int cmd_args = 1;
+        for (size_t i = 0; i < strlen(line); i++) { if (line[i] == ' ') { cmd_args++; } }
+        size_t args_sizet = (size_t) cmd_args;
+        char ** argv_sh = strsplit(line, space, &args_sizet);
+
+        find_cmd(cmd_args, argv_sh, line);
+
+        for (size_t i=0; i < args_sizet; i++) {
+            free(argv_sh[i]);
+            argv_sh[i] = NULL;
+        }
+        free(argv_sh);
+        argv_sh = NULL;
+    } else {
+        print_invalid_index();
     }
 }
 

@@ -23,8 +23,9 @@ void find_cmd(int argc_sh, char *argv_sh[], char * line);
 int run_cd(int argc_sh, char * argv_sh[]);
 
 /**
- * Helper for when the user inputs an invalid [PATH]
+ * Helper for when the user inputs an invalid command
  * Parses entry into a printable command
+ * Note: absolutely necessary, as without this the #[INT] command breaks!
  */
 char * args_to_cmd(int argc_sh, char * argv_sh[]);
 
@@ -38,3 +39,10 @@ char** strsplit(const char * string, const char * delim, size_t * num_tokens);
  * Print the contents of the recent_history vector
  */
 void print_history(int argc_sh, char * argv_sh[]);
+
+/**
+ * Execute a specific command in history
+ * Formatted as '#[INTEGER]'
+ * i.e. #3 will print the third command in recent_history
+ */
+void exec_history(int argc_sh, char * argv_sh[], int input_int);

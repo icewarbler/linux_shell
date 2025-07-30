@@ -24,3 +24,7 @@ void print_invalid_command(const char *command) {
 void print_history_line(size_t index, const char *command) {
     printf("%zu\t%s\n", index, command);
 }
+
+void print_invalid_index() {
+    printf("Invalid Index!\n");
+}
