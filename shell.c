@@ -411,14 +411,14 @@ int run_external(int argc_sh, char * argv_sh[], char * line) {
 }
 
 char * args_to_cmd(int argc_sh, char * argv_sh[]) {
-    int cmd_length = 0;
+    size_t cmd_length = 0;
     for (int i = 0; i < argc_sh; i++) {
         cmd_length += strlen(argv_sh[i]);
     }
     cmd_length += argc_sh - 1; //spaces
     cmd_length++;   //null
 
-    char * cmd = malloc(cmd_length);
+    char * cmd = (char *) malloc(cmd_length);
     for (int i = 0; i < argc_sh; i++) {
         if (i == 0) {
             cmd = strcpy(cmd, argv_sh[i]);
