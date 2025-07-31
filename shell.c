@@ -64,7 +64,7 @@ void parse_command(int argc, char* argv[]) {
         return;
     }
 
-    if(!check_or_op(argc_sh, argv_sh, line) && !check_and_op(argc_sh, argv_sh, line) && !check_separator(argc_sh, argv_sh, line)) {
+    if(!check_conjunction(argc_sh, argv_sh, line)  && !check_separator(argc_sh, argv_sh, line)) {
         find_cmd(argc_sh, argv_sh, user_input);
     }
 
@@ -115,16 +115,16 @@ char ** strsplit(const char * str, const char * delim, size_t * num_tokens) {
     return argv_sh;
 }
 
-int check_or_op(int argc_sh, char * argv_sh[], char * line) {
+int check_conjunction(int argc_sh, char * argv_sh[], char * line) {
     int delim_index = -1;
-
+    int is_and = 0;
     for (int i = 0; i < argc_sh; i++) {
-        if (!strcmp(argv_sh[i], "||")) {
+        if(!strcmp(argv_sh[i], "||") || !strcmp(argv_sh[i], "&&")) {     // found op
             delim_index = i;
+            if (!strcmp(argv_sh[i], "&&")) { is_and = 1; }
         }
     }
-
-    if (delim_index == -1) {   // not or op
+    if (delim_index == -1) {   // not op
         return 0;
     }
     int cmd1_argc = 0;
@@ -140,7 +140,9 @@ int check_or_op(int argc_sh, char * argv_sh[], char * line) {
     vector_push_back(recent_history, line);
         
     int status1 = cd_or_external(cmd1_argc, cmd1_argv, NULL);
-    if (!status1) {
+    if (!is_and && !status1) {
+        cd_or_external(cmd2_argc, cmd2_argv, NULL);
+    } else if (is_and && status1) {
         cd_or_external(cmd2_argc, cmd2_argv, NULL);
     }
     for (int i = 0; i < cmd1_argc; i++) {
@@ -155,47 +157,7 @@ int check_or_op(int argc_sh, char * argv_sh[], char * line) {
     free(cmd2_argv);
     cmd1_argv = NULL;
     cmd2_argv = NULL;
-    return 1;   
-}
-
-int check_and_op(int argc_sh, char * argv_sh[], char * line) {
-    int delim_index = 0;
-    for (int i = 0; i < argc_sh; i++) {
-        if(!strcmp(argv_sh[i], "&&")) {     // found or op
-            delim_index = i;
-        }
-    }
-    if (delim_index == 0) {   // not and op
-        return 0;
-    }
-    int cmd1_argc = 0;
-    int cmd2_argc = 0;
-    char ** cmd1_argv = make_first_command(argc_sh, argv_sh, delim_index);
-    char ** cmd2_argv = make_second_command(argc_sh, argv_sh, delim_index);
-    for (int j = 0; j < delim_index; j++) {
-        cmd1_argc++;
-    }
-    for (int j = delim_index + 1; j < argc_sh; j++) {
-        cmd2_argc++;
-    }
-    
-    vector_push_back(recent_history, line);
-    int status1 = cd_or_external(cmd1_argc, cmd1_argv, NULL);
-    if (status1 == 1) {
-        cd_or_external(cmd2_argc, cmd2_argv, NULL);
-    }
-    for (int i = 0; i < cmd1_argc; i++) {
-        free(cmd1_argv[i]);
-        cmd1_argv[i] = NULL;
-    }
-    for(int i = 0; i < cmd2_argc; i++) {
-        free(cmd2_argv[i]);
-        cmd2_argv[i] = NULL;
-    }
-    free(cmd1_argv);
-    free(cmd2_argv);
-
-    return 1;
+    return 1; 
 }
 
 int check_separator(int argc_sh, char * argv_sh[], char * line) {

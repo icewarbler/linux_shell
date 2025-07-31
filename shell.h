@@ -64,18 +64,6 @@ int run_external(int argc_sh, char * argv_sh[], char * line);
 void cctrl_handler(int sig);
 
 /**
- * Checks if the user has input multiple commands using the or operator
- * @return 1 on success, 0 on failure
- */
-int check_or_op(int argc_sh, char * argv_sh[], char * line);
-
-/**
- * Checks if the user has input multiple commands using the or operator
- * @return 1 on success, 0 on failure
- */
-int check_and_op(int argc_sh, char * argv_sh[], char * line);
-
-/**
  * Makes the first command when given 'and' or 'or' operator
  */
 char ** make_first_command(int argc_sh, char * argv_sh[], int delim_index);
@@ -91,4 +79,14 @@ char ** make_second_command(int argc_sh, char * argv_sh[], int delim_index);
  */
 int check_separator(int argc_sh, char * argv_sh[], char * line);
 
+/**
+ * Helper function for conjunction operators
+ * Checks whether a multi-word command is cd or an external command
+ */
 int cd_or_external(int argc, char * argv_sh[], char * line);
+
+/**
+ * Checks if the user has input two commands with the and/or operator
+ * @return 1 on success, 0 on failure
+ */
+int check_conjunction(int argc_sh, char * argv_sh[], char * line);
