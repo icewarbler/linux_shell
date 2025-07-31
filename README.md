@@ -15,6 +15,8 @@ A functional linux shell written in C
 
 `#<n>` - re-runs <i>n</i>-th command in the history
 
+`!<prefix>` - prints and executes the last command that has the specified prefix
+
 ## Logical Operators:
 
 **Will not work with `!history`, `#<n>`, or `!<PREFIX>`**

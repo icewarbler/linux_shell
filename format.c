@@ -60,3 +60,7 @@ void print_history_line(size_t index, const char *command) {
 void print_invalid_index() {
     printf("Invalid Index!\n");
 }
+
+void print_no_history_match() {
+    printf("No Match!\n");
+}

@@ -100,3 +100,8 @@ void print_history_line(size_t index, const char *command);
  * Print when the user specifies an out-of-bounds history command.
  */
 void print_invalid_index();
+
+/**
+ * Print when the history search fails (no command has the prefix).
+ */
+void print_no_history_match();

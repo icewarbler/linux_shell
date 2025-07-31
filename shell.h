@@ -48,6 +48,13 @@ void print_history(int argc_sh, char * argv_sh[]);
 void exec_history(int argc_sh, char * argv_sh[], int input_int);
 
 /**
+ * Execute a specific command in history
+ * Formatted as '!<prefix>'
+ * i.e. !ec will print the most recent command in history that starts with 'ec'
+ */
+void exec_prefix(int argc_sh, char * argv_sh[], char * prefix);
+
+/**
  * Checks if a command exists in the path
  */
 int check_external(char * cmd, char* args[]);

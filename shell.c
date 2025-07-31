@@ -326,6 +326,11 @@ void find_cmd(int argc_sh, char *argv_sh[], char * line) {
         if (sscanf(cmd+1, "%d", &input_int) == 1) {
             exec_history(argc_sh, argv_sh, input_int);
         } else { print_invalid_command(line); }
+    } else if (!strncmp(line, "!", 1)) {
+        char prefix[100];
+        if (sscanf(cmd+1, "%s ", (char *) &prefix) == 1) {
+            exec_prefix(argc_sh, argv_sh, prefix);
+        } else { print_invalid_command(line); }
     } else if (!strcmp(cmd, "exit")) {  // exit
         exit_handler();
     } else if (check_external(cmd, argv_sh)) {
@@ -481,6 +486,48 @@ void exec_history(int argc_sh, char * argv_sh[], int input_int) {
         argv_sh = NULL;
     } else {
         print_invalid_index();
+    }
+}
+
+void exec_prefix(int argc_sh, char * argv_sh[], char * prefix) {
+    if (!vector_size(recent_history)) {
+        print_no_history_match();
+        return;
+    }
+    if (argc_sh > 1) {
+        char * cmd = args_to_cmd(argc_sh, argv_sh);
+        print_invalid_command(cmd);
+        free(cmd);
+        return;
+    }
+    int found = 0;
+    for (size_t i = vector_size(recent_history); i-- > 0; ) {
+        char * line = (char*) vector_get(recent_history, i);
+        if (!strncmp(line, prefix, strlen(prefix))) {
+            found = 1;
+            const char * space = " ";
+            size_t args_sizet = 0;
+            int cmd_args = 1;
+            for (size_t i=0; i < strlen(line); i++) {  if (line[i] == ' ') { cmd_args++; } }
+            args_sizet = (size_t) cmd_args;
+            char ** argv_sh = strsplit(line, space, &args_sizet); 
+            int has_conj = check_conjunction(cmd_args, argv_sh, line);
+            int has_sep = check_separator(cmd_args, argv_sh, line);
+            if (!has_conj && !has_sep) {
+                find_cmd(cmd_args, argv_sh, line);
+            }
+            for (int i=0; i < cmd_args; i++) {
+                free(argv_sh[i]);
+                argv_sh[i] = NULL;
+            }
+            free(argv_sh);
+            argv_sh = NULL;
+            
+            return;
+        }
+    }
+    if (found == 0) {
+        print_no_history_match();
     }
 }
 
