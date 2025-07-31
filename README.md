@@ -4,7 +4,7 @@ A functional linux shell written in C
 ## Instructions
 1 - Download files
 
-2 - Run with 'make debug'
+2 - Run with `make debug`
 
 3 - Exit with `exit` or `ctrl+Z`
 
