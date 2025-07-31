@@ -64,12 +64,12 @@ int run_external(int argc_sh, char * argv_sh[], char * line);
 void cctrl_handler(int sig);
 
 /**
- * Makes the first command when given 'and' or 'or' operator
+ * Parses the first command when given a logical operator
  */
-char ** make_first_command(int argc_sh, char * argv_sh[], int delim_index);
+char ** make_first_command(int argc_sh, char * argv_sh[], int delim_index, int is_sep);
 
 /**
- * Makes the second command when given 'and' or 'or' operator
+ * Parses the second command when given a logical operator
  */
 char ** make_second_command(int argc_sh, char * argv_sh[], int delim_index);
 

@@ -12,6 +12,7 @@ static vector * recent_history;
 static const char * directory;
 static pid_t fg_pid = -1;
 static char * fg_cmd;
+int is_sep;
 const char * space = " ";
 
 
@@ -118,6 +119,7 @@ char ** strsplit(const char * str, const char * delim, size_t * num_tokens) {
 int check_conjunction(int argc_sh, char * argv_sh[], char * line) {
     int delim_index = -1;
     int is_and = 0;
+    is_sep = 0;
     for (int i = 0; i < argc_sh; i++) {
         if(!strcmp(argv_sh[i], "||") || !strcmp(argv_sh[i], "&&")) {     // found op
             delim_index = i;
@@ -129,7 +131,7 @@ int check_conjunction(int argc_sh, char * argv_sh[], char * line) {
     }
     int cmd1_argc = 0;
     int cmd2_argc = 0;
-    char ** cmd1_argv = make_first_command(argc_sh, argv_sh, delim_index);
+    char ** cmd1_argv = make_first_command(argc_sh, argv_sh, delim_index, is_sep);
     char ** cmd2_argv = make_second_command(argc_sh, argv_sh, delim_index); 
     for (int j = 0; j < delim_index; j++) {
         cmd1_argc++;
@@ -160,7 +162,9 @@ int check_conjunction(int argc_sh, char * argv_sh[], char * line) {
     return 1; 
 }
 
+
 int check_separator(int argc_sh, char * argv_sh[], char * line) {
+    is_sep = 1;
     int delim_index = -1;
     for (int i = 0; i < argc_sh; i++) {
         for (int j = 0; j < (int) strlen(argv_sh[i]); j++) {
@@ -175,29 +179,8 @@ int check_separator(int argc_sh, char * argv_sh[], char * line) {
 
     int cmd1_argc = 0;
     int cmd2_argc = 0;
-    size_t cmd1_num = 0;
-    int cmd1_length = 0;
-    for (int i = 0; i <= delim_index; i++) {
-        cmd1_length += strlen(argv_sh[i]);
-        cmd1_num++;
-    }
-    cmd1_length += (int) cmd1_num -1; //spaces
-    cmd1_length++;       //null terminator
-    char * cmd1 = (char*) malloc(cmd1_length);
-    for (int i = 0; i <= delim_index; i++) {
-        char * cmd1_part = argv_sh[i];
-        if (i ==0) {
-            cmd1 = strcpy(cmd1, cmd1_part);
-        } else {
-            cmd1 = strcat(cmd1, cmd1_part);
-        }
-        if (i+1 < delim_index+1) {
-            cmd1 = strcat(cmd1, " ");
-        }
-    }
-    const char * space = " ";
-    char ** cmd1_argv = strsplit(cmd1, space, &cmd1_num); 
-    
+
+    char ** cmd1_argv = make_first_command(argc_sh, argv_sh, delim_index, is_sep);
     char ** cmd2_argv = make_second_command(argc_sh, argv_sh, delim_index);
     for (int j = 0; j <= delim_index; j++) {
         cmd1_argc++;
@@ -227,30 +210,50 @@ int check_separator(int argc_sh, char * argv_sh[], char * line) {
     }
     free(cmd1_argv);
     free(cmd2_argv);
-    free(cmd1);
         
     return 1;   
 }
 
-char ** make_first_command(int argc_sh, char * argv_sh[], int delim_index) {
+char ** make_first_command(int argc_sh, char * argv_sh[], int delim_index, int is_sep) {
     size_t cmd1_num = 0;
     int cmd1_length = 0;
-    for (int i = 0; i < delim_index; i++) {
-        cmd1_length += strlen(argv_sh[i]);
-        cmd1_num++;
+    if (!is_sep) {
+        for (int i = 0; i < delim_index; i++) {
+            cmd1_length += strlen(argv_sh[i]);
+            cmd1_num++;
+        }
+    } else {
+        for (int i = 0; i <= delim_index; i++) {
+            cmd1_length += strlen(argv_sh[i]);
+            cmd1_num++;
+        }
     }
     cmd1_length += (int) cmd1_num -1; //spaces
     cmd1_length++;       //null terminator
     char * cmd1 = (char*) malloc(cmd1_length);
-    for (int i = 0; i < delim_index; i++) {
-        char * cmd1_part = argv_sh[i];
-        if (i ==0) {
-            cmd1 = strcpy(cmd1, cmd1_part);
-        } else {
-            cmd1 = strcat(cmd1, cmd1_part);
+    if (!is_sep) {
+        for (int i = 0; i < delim_index; i++) {
+            char * cmd1_part = argv_sh[i];
+            if (i ==0) {
+                cmd1 = strcpy(cmd1, cmd1_part);
+            } else {
+                cmd1 = strcat(cmd1, cmd1_part);
+            }
+            if (i+1 < delim_index) {
+                cmd1 = strcat(cmd1, " ");
+            }
         }
-        if (i+1 < delim_index) {
-            cmd1 = strcat(cmd1, " ");
+    } else {
+        for (int i = 0; i <= delim_index; i++) {
+            char * cmd1_part = argv_sh[i];
+            if (i ==0) {
+                cmd1 = strcpy(cmd1, cmd1_part);
+            } else {
+                cmd1 = strcat(cmd1, cmd1_part);
+            }
+            if (i + 1 < delim_index + 1) {
+                cmd1 = strcat(cmd1, " ");
+            }
         }
     }
     
