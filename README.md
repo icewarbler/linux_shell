@@ -15,5 +15,11 @@ A functional linux shell written in C
 
 `#[INTEGER]` - re-runs command in the history
 
+`[CMD] || [CMD]` - runs the first command OR the second command. The second command will only be run if the first command fails.
+
+`[CMD] && [CMD]` - runs the first command AND the second command. If the first command fails, the second command will not be run.
+
+`[CMD]; [CMD]` - runs the first command, then the second command. The second command will still be run if the first command fails.
+
 ## IMPORTANT - Fork Bombs
 This application utilizes fork(). To avoid accidentally fork-bombing you system, make sure you set `ulimit`. 

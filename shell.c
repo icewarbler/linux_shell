@@ -63,7 +63,10 @@ void parse_command(int argc, char* argv[]) {
         free(argv_sh);
         return;
     }
-    find_cmd(argc_sh, argv_sh, line);
+
+    if(!check_or_op(argc_sh, argv_sh, line) && !check_and_op(argc_sh, argv_sh, line) && !check_separator(argc_sh, argv_sh, line)) {
+        find_cmd(argc_sh, argv_sh, user_input);
+    }
 
     free(user_input);
     for(int i=0; i < argc_sh; i++) {
@@ -112,6 +115,239 @@ char ** strsplit(const char * str, const char * delim, size_t * num_tokens) {
     return argv_sh;
 }
 
+int check_or_op(int argc_sh, char * argv_sh[], char * line) {
+    int delim_index = -1;
+
+    for (int i = 0; i < argc_sh; i++) {
+        if (!strcmp(argv_sh[i], "||")) {
+            delim_index = i;
+        }
+    }
+
+    if (delim_index == -1) {   // not or op
+        return 0;
+    }
+    int cmd1_argc = 0;
+    int cmd2_argc = 0;
+    char ** cmd1_argv = make_first_command(argc_sh, argv_sh, delim_index);
+    char ** cmd2_argv = make_second_command(argc_sh, argv_sh, delim_index); 
+    for (int j = 0; j < delim_index; j++) {
+        cmd1_argc++;
+    }
+    for (int j = delim_index + 1; j < argc_sh; j++) {
+        cmd2_argc++;
+    }
+    vector_push_back(recent_history, line);
+        
+    int status1 = cd_or_external(cmd1_argc, cmd1_argv, NULL);
+    if (!status1) {
+        cd_or_external(cmd2_argc, cmd2_argv, NULL);
+    }
+    for (int i = 0; i < cmd1_argc; i++) {
+        free(cmd1_argv[i]);
+        cmd1_argv[i] = NULL;
+    }
+    for(int i = 0; i < cmd2_argc; i++) {
+        free(cmd2_argv[i]);
+        cmd2_argv[i] = NULL;
+    }
+    free(cmd1_argv);
+    free(cmd2_argv);
+    cmd1_argv = NULL;
+    cmd2_argv = NULL;
+    return 1;   
+}
+
+int check_and_op(int argc_sh, char * argv_sh[], char * line) {
+    int delim_index = 0;
+    for (int i = 0; i < argc_sh; i++) {
+        if(!strcmp(argv_sh[i], "&&")) {     // found or op
+            delim_index = i;
+        }
+    }
+    if (delim_index == 0) {   // not and op
+        return 0;
+    }
+    int cmd1_argc = 0;
+    int cmd2_argc = 0;
+    char ** cmd1_argv = make_first_command(argc_sh, argv_sh, delim_index);
+    char ** cmd2_argv = make_second_command(argc_sh, argv_sh, delim_index);
+    for (int j = 0; j < delim_index; j++) {
+        cmd1_argc++;
+    }
+    for (int j = delim_index + 1; j < argc_sh; j++) {
+        cmd2_argc++;
+    }
+    
+    vector_push_back(recent_history, line);
+    int status1 = cd_or_external(cmd1_argc, cmd1_argv, NULL);
+    if (status1 == 1) {
+        cd_or_external(cmd2_argc, cmd2_argv, NULL);
+    }
+    for (int i = 0; i < cmd1_argc; i++) {
+        free(cmd1_argv[i]);
+        cmd1_argv[i] = NULL;
+    }
+    for(int i = 0; i < cmd2_argc; i++) {
+        free(cmd2_argv[i]);
+        cmd2_argv[i] = NULL;
+    }
+    free(cmd1_argv);
+    free(cmd2_argv);
+
+    return 1;
+}
+
+int check_separator(int argc_sh, char * argv_sh[], char * line) {
+    int delim_index = -1;
+    for (int i = 0; i < argc_sh; i++) {
+        for (int j = 0; j < (int) strlen(argv_sh[i]); j++) {
+            if(argv_sh[i][j] == ';') {     // found separator
+                delim_index = i;
+            }
+        }
+    }
+    if (delim_index == -1) {
+        return 0;
+    }
+
+    int cmd1_argc = 0;
+    int cmd2_argc = 0;
+    size_t cmd1_num = 0;
+    int cmd1_length = 0;
+    for (int i = 0; i <= delim_index; i++) {
+        cmd1_length += strlen(argv_sh[i]);
+        cmd1_num++;
+    }
+    cmd1_length += (int) cmd1_num -1; //spaces
+    cmd1_length++;       //null terminator
+    char * cmd1 = (char*) malloc(cmd1_length);
+    for (int i = 0; i <= delim_index; i++) {
+        char * cmd1_part = argv_sh[i];
+        if (i ==0) {
+            cmd1 = strcpy(cmd1, cmd1_part);
+        } else {
+            cmd1 = strcat(cmd1, cmd1_part);
+        }
+        if (i+1 < delim_index+1) {
+            cmd1 = strcat(cmd1, " ");
+        }
+    }
+    const char * space = " ";
+    char ** cmd1_argv = strsplit(cmd1, space, &cmd1_num); 
+    
+    char ** cmd2_argv = make_second_command(argc_sh, argv_sh, delim_index);
+    for (int j = 0; j <= delim_index; j++) {
+        cmd1_argc++;
+    }
+    for (int j = delim_index + 1; j < argc_sh; j++) {
+        cmd2_argc++;
+    }
+    
+    char * str = cmd1_argv[delim_index];
+    size_t len = strlen(str);
+    if (len > 0 && str[len - 1] == ';') {
+        str[len - 1] = '\0'; 
+    }
+
+    vector_push_back(recent_history, line);
+
+    cd_or_external(cmd1_argc, cmd1_argv, NULL);
+    cd_or_external(cmd2_argc, cmd2_argv, NULL);
+    
+    for (int i = 0; i < cmd1_argc; i++) {
+        free(cmd1_argv[i]);
+        cmd1_argv[i] = NULL;
+    }
+    for(int i = 0; i < cmd2_argc; i++) {
+        free(cmd2_argv[i]);
+        cmd2_argv[i] = NULL;
+    }
+    free(cmd1_argv);
+    free(cmd2_argv);
+    free(cmd1);
+        
+    return 1;   
+}
+
+char ** make_first_command(int argc_sh, char * argv_sh[], int delim_index) {
+    size_t cmd1_num = 0;
+    int cmd1_length = 0;
+    for (int i = 0; i < delim_index; i++) {
+        cmd1_length += strlen(argv_sh[i]);
+        cmd1_num++;
+    }
+    cmd1_length += (int) cmd1_num -1; //spaces
+    cmd1_length++;       //null terminator
+    char * cmd1 = (char*) malloc(cmd1_length);
+    for (int i = 0; i < delim_index; i++) {
+        char * cmd1_part = argv_sh[i];
+        if (i ==0) {
+            cmd1 = strcpy(cmd1, cmd1_part);
+        } else {
+            cmd1 = strcat(cmd1, cmd1_part);
+        }
+        if (i+1 < delim_index) {
+            cmd1 = strcat(cmd1, " ");
+        }
+    }
+    
+    const char * space = " ";
+    char ** cmd1_argv = strsplit(cmd1, space, &cmd1_num); 
+    free(cmd1);
+    return cmd1_argv;
+}
+
+char ** make_second_command(int argc_sh, char * argv_sh[], int delim_index) {
+    const char * space = " ";
+
+    int cmd2_length = 0;
+    size_t cmd2_num =0;
+    for (int i = delim_index + 1; i < argc_sh; i++) {
+        cmd2_length += strlen(argv_sh[i]);
+        cmd2_num++;
+    }
+    cmd2_length += (int) cmd2_num - 1; //spaces
+    cmd2_length++;  // null terminator
+    char * cmd2 = (char*) malloc(cmd2_length);
+    for (int i = delim_index+1; i < argc_sh; i++) {
+        char * cmd2_part = argv_sh[i];
+        if (i == delim_index +1) {
+            cmd2 = strcpy(cmd2, cmd2_part);
+        } else {
+            cmd2 = strcat(cmd2, cmd2_part);
+        }
+        if (i+1 < argc_sh) {
+            cmd2 = strcat(cmd2, " ");
+        }
+    }
+    char ** cmd2_argv = strsplit(cmd2, space, &cmd2_num);
+    free(cmd2);
+    return cmd2_argv;
+}
+
+int cd_or_external(int argc, char * argv_sh[], char * line) {
+    if (!strcmp(argv_sh[0], "cd")) {
+            int res = run_cd(argc, argv_sh);
+            return res;
+    } else if (check_external(argv_sh[0], argv_sh)) {
+        int ret = run_external(argc, argv_sh, line);
+        if (ret == 0) {
+            char * cmd = args_to_cmd(argc, argv_sh);
+            print_invalid_command(cmd);
+            free(cmd);
+            return 0;
+        } else {
+            return 1;
+        }
+    } else {
+        char * cmd = args_to_cmd(argc, argv_sh);
+        print_invalid_command(cmd);
+        free(cmd);
+        return 0;
+    }
+}
+
 void find_cmd(int argc_sh, char *argv_sh[], char * line) {
     char * cmd = argv_sh[0];
 
@@ -129,6 +365,9 @@ void find_cmd(int argc_sh, char *argv_sh[], char * line) {
         exit_handler();
     } else if (check_external(cmd, argv_sh)) {
         run_external(argc_sh, argv_sh, line);
+    } else {
+        vector_push_back(recent_history, line);
+        print_invalid_command(line);
     }
 }
 
