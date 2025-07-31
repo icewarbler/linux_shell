@@ -5,13 +5,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 static vector * recent_history;
 static const char * directory;
+static pid_t fg_pid = -1;
+static char * fg_cmd;
 const char * space = " ";
 
 
 int shell (int argc, char *argv[]) {
+    signal(SIGINT, cctrl_handler);
+
     recent_history = vector_create(&string_copy_constructor, &string_destructor, &string_default_constructor);
 
     while(1){ parse_command(argc, argv); }
@@ -114,12 +120,85 @@ void find_cmd(int argc_sh, char *argv_sh[], char * line) {
         vector_push_back(recent_history, line);
     } else if (!strcmp(cmd, "!history")) {  // !history
         print_history(argc_sh, argv_sh);
-    } else if (!strncmp(cmd, "#", 1)) {
+    } else if (!strncmp(cmd, "#", 1)) { // #[INT]
         int input_int;
         if (sscanf(cmd+1, "%d", &input_int) == 1) {
             exec_history(argc_sh, argv_sh, input_int);
         } else { print_invalid_command(line); }
+    } else if (!strcmp(cmd, "exit")) {  // exit
+        exit_handler();
+    } else if (check_external(cmd, argv_sh)) {
+        run_external(argc_sh, argv_sh, line);
     }
+}
+
+int check_external(char * cmd, char* args[]) {
+    char * path = getenv("PATH");
+    char * path_copy = strdup(path);
+    char * dir = strtok(path_copy, ":");
+
+    while (dir != NULL) {
+        char path_buffer[1024];
+        snprintf(path_buffer, sizeof(path_buffer), "%s/%s", dir, cmd); // iterates through 4 different possible directories
+        if (access(path_buffer, X_OK) == 0) {   // this means the cmd was found
+            free(path_copy);
+            return 1;
+        }
+        dir = strtok(NULL, ":");
+    }
+ //   free(dir);
+    free(path_copy);
+    return 0;
+}
+
+int run_external(int argc_sh, char * argv_sh[], char * line) {
+    fflush(stdout);
+    fflush(stderr);
+
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        print_fork_failed();
+        exit(1);
+    }
+    if (!pid) { // child
+        signal(SIGINT, cctrl_handler);    // reset child to handle default ctrl+c
+        fg_pid = getpid();
+        fg_cmd = malloc(strlen(argv_sh[0])+1);
+        fg_cmd = strdup(argv_sh[0]);
+
+        int bg_group = setpgid(pid, 0); // set as bg process group
+        if (bg_group == -1) { print_setpgid_failed(); }
+
+        
+        print_command_executed(getpid());
+        execvp(argv_sh[0], argv_sh);
+        print_exec_failed(argv_sh[0]);
+        exit(1);
+    } else if (pid > 0) {   // parent
+        int wstatus;
+        pid_t child_pid = waitpid(pid, &wstatus, 0);
+        if (  child_pid == -1 ) { // process was killed by sig
+            print_wait_failed();
+            exit(1);
+        } else if ( WIFCONTINUED(wstatus) ) { 
+            print_continued_process(child_pid, argv_sh[0]); 
+            return 0;
+        } else if ( WIFSIGNALED(wstatus) ) {
+            print_stopped_process(child_pid, argv_sh[0]);
+            return 0;
+        }   else if ( WIFEXITED(wstatus) ) {    // child returned successfully
+            if (line != NULL) {
+                vector_push_back(recent_history, line);
+            }
+            fg_pid = -1;
+            free(fg_cmd);
+            int success = kill(child_pid, SIGKILL);
+            if (!success) { print_killed_process(child_pid, argv_sh[0]); }
+            return 1;
+        }
+    }
+    return 0;
 }
 
 char * args_to_cmd(int argc_sh, char * argv_sh[]) {
@@ -199,6 +278,19 @@ void exec_history(int argc_sh, char * argv_sh[], int input_int) {
     } else {
         print_invalid_index();
     }
+}
+
+void cctrl_handler(int sig) {
+    pid_t pid;
+    int status;
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        if (WIFSIGNALED(status)) {
+            print_killed_process(fg_pid, fg_cmd);
+        } else if (WIFSTOPPED(status)) {
+            print_stopped_process(fg_pid, fg_cmd);
+        }
+    }
+    return;
 }
 
 void exit_handler() {

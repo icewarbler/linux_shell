@@ -46,3 +46,19 @@ void print_history(int argc_sh, char * argv_sh[]);
  * i.e. #3 will print the third command in recent_history
  */
 void exec_history(int argc_sh, char * argv_sh[], int input_int);
+
+/**
+ * Checks if a command exists in the path
+ */
+int check_external(char * cmd, char* args[]);
+
+/**
+ * Runs a command in path
+ * @return 1 on success, 0 on failure
+ */
+int run_external(int argc_sh, char * argv_sh[], char * line);
+
+/**
+ * Handler for ctrl+c
+ */
+void cctrl_handler(int sig);

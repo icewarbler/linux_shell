@@ -2,8 +2,8 @@
  *  Formatting for the shell
  *  Courtesy of https://cs341.cs.illinois.edu/
  */
+
 #pragma once
-// #include "linux_libs/unistdwind.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <time.h>
@@ -42,10 +42,53 @@ void print_prompt(const char *directory, pid_t pid);
 void print_no_directory(const char *path);
 
 /**
+ * Print when executing an external command with a process id `pid`.
+ */
+void print_command_executed(pid_t pid);
+
+/**
+ * Print when fork fails.
+ */
+void print_fork_failed();
+
+/**
+ * Print when exec('command') fails.
+ */
+void print_exec_failed(const char *command);
+
+/**
+ * Print when wait fails.
+ */
+void print_wait_failed();
+
+/**
+ * Print when setpgid fails.
+ */
+void print_setpgid_failed();
+
+/**
  * Print when use of built-in 'command' is invalid,
  * such as `kill` without pid.
  */
 void print_invalid_command(const char *command);
+
+/**
+ * Print when a process was successfully killed.
+ *
+ * pid      process id of killed process
+ * command  command process was running
+ */
+void print_killed_process(int pid, char *command);
+
+/**
+ * Print when process with process ID `pid` has been stopped.
+ */
+void print_stopped_process(int pid, char *command);
+
+/**
+ * Print when process with process ID `pid` was sent the `SIGCONT` signal.
+ */
+void print_continued_process(int pid, char *command);
 
 /**
  * Print a single line of history. Both `index` and `command` are the same as

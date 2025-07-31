@@ -1,7 +1,7 @@
 /**
- * vector
- * CS 341 - Fall 2024
+ *  Courtesy of https://cs341.cs.illinois.edu/
  */
+
 #pragma once
 #include <stdlib.h>
 /**

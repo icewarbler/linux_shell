@@ -1,10 +1,5 @@
 /**
- * vector
- * CS 341 - Fall 2024
- */
-/**
- * Vector Lab
- * CS 241 - Spring 2019
+ *  Courtesy of https://cs341.cs.illinois.edu/
  */
 
 #include "vector.h"
