@@ -1,3 +1,5 @@
+# Courtesy of https://cs341.cs.illinois.edu/
+
 # directory to store object files
 OBJS_DIR = .objs
 
