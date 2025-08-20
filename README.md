@@ -1,5 +1,5 @@
 # Linux Shell
-A functional linux shell written in C
+This is a simple Linux shell written in C. It allows the use of any Linux executable, along with several predefined commands.
 
 ## Instructions
 1 - Download files
@@ -28,4 +28,5 @@ A functional linux shell written in C
 `<CMD>; <CMD>` - runs the first command, then the second command. The second command will still be run if the first command fails.
 
 ## IMPORTANT - Fork Bombs
+
 This application utilizes fork(). To avoid accidentally fork-bombing you system, make sure you set `ulimit`. 
